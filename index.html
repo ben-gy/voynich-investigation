@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Withered Key — A Forensic Reading of the Voynich Manuscript</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ground:#0e1216; --ground2:#161c24; --ground3:#1d2530;
+    --text:#dad1bc; --text-dim:#9a927d; --faint:#6b6553; --hair:#29313a;
+    --card:#e7dec9; --card2:#dcd1b6; --card-ink:#2a2c28; --card-dim:#6c6552; --card-edge:#c7bc9e;
+    --ochre:#cf9a3a; --ochre-deep:#a87a26; --oxblood:#aa493a; --verdigris:#5d8a78; --indigo:#5d7a9e;
+    --serif:"Spectral",Georgia,serif; --disp:"Fraunces",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--ground);color:var(--text);font-family:var(--serif);
+    font-size:18px;line-height:1.66;font-weight:300;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:0 22px}
+  h1,h2,h3,h4{font-family:var(--disp);font-weight:500;line-height:1.1;font-optical-sizing:auto}
+  strong{color:#fff;font-weight:500}
+  em{font-style:italic}
+  a{color:var(--ochre);text-decoration:none}
+  .mono{font-family:var(--mono)}
+  p{margin-top:15px;max-width:65ch}
+
+  /* ben.gy attribution — subtle Chicago-font credit (matches Ben's other sites). */
+  @font-face{font-family:'Chicago';src:url('ChicagoFLF.woff2') format('woff2');
+    font-weight:normal;font-style:normal;font-display:swap}
+  .chicago-font{font-family:'Chicago','Geneva',sans-serif;letter-spacing:.5px}
+  .credit a{color:inherit;text-decoration:none;transition:color .15s;opacity:.85}
+  .credit a:hover{opacity:1;color:var(--ochre)}
+
+  /* ---------------- STICKY HEADER ---------------- */
+  .topbar{position:sticky;top:0;z-index:60;background:rgba(14,18,22,.86);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--hair)}
+  .topbar .row{max-width:780px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px}
+  .topbar .id{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap}
+  .topbar .id b{color:var(--ochre);font-weight:400}
+  .topbar .spacer{flex:1}
+  .toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);user-select:none}
+  .toggle .sw{width:34px;height:18px;border-radius:10px;background:var(--ground3);border:1px solid var(--hair);position:relative;transition:.2s}
+  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text-dim);transition:.2s}
+  .toggle.on .sw{background:var(--ochre-deep);border-color:var(--ochre)}
+  .toggle.on .sw::after{left:18px;background:#fff}
+  .progress{height:2px;background:transparent}
+  .progress .fill{height:100%;background:linear-gradient(90deg,var(--verdigris),var(--ochre));width:0}
+
+  /* ---------------- HERO ---------------- */
+  .hero{position:relative;overflow:hidden;padding:64px 0 50px;border-bottom:1px solid var(--hair)}
+  .driftwrap{position:absolute;inset:0;z-index:0;opacity:.16;pointer-events:none;overflow:hidden}
+  .drift{position:absolute;white-space:nowrap;font-family:var(--mono);font-size:18px;color:var(--ochre);
+    will-change:transform;animation:drift linear infinite}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .hero .wrap{position:relative;z-index:2}
+  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ochre);margin-bottom:24px}
+  .hero h1{font-size:clamp(46px,10vw,92px);font-weight:500;letter-spacing:-.02em;color:#fff;line-height:.96}
+  .hero h1 em{font-style:italic;color:var(--ochre);font-weight:400}
+  .hero .thesis{margin-top:28px;font-size:21px;line-height:1.5;color:var(--text);max-width:30ch;font-weight:300}
+  .hero .thesis b{color:#fff;font-weight:500}
+  .hero .meta{margin-top:36px;display:flex;flex-wrap:wrap;gap:7px 24px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.03em}
+  .hero .meta b{color:var(--ochre-deep);font-weight:400}
+
+  /* ---------------- SECTIONS ---------------- */
+  section{padding:62px 0;border-bottom:1px solid var(--hair)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ochre);margin-bottom:14px}
+  h2.head{font-size:clamp(27px,5vw,40px);color:#fff;letter-spacing:-.015em;margin-bottom:6px}
+  .lede{font-size:20px;color:var(--text-dim);max-width:60ch;font-weight:300;margin-top:12px}
+
+  /* ---------------- GLOSSARY TERMS ---------------- */
+  .term{border-bottom:1px dashed var(--ochre-deep);cursor:pointer;color:var(--text)}
+  .term:hover{color:var(--ochre)}
+
+  /* ---------------- VELLUM CARD (evidence) ---------------- */
+  .card{background:var(--card);color:var(--card-ink);border-radius:5px;margin-top:26px;
+    box-shadow:0 18px 40px -22px rgba(0,0,0,.8),0 2px 0 rgba(255,255,255,.04);
+    border:1px solid var(--card-edge);overflow:hidden}
+  .card .ch{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;
+    padding:15px 20px;background:var(--card2);border-bottom:1px solid var(--card-edge)}
+  .card .ch .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--card-dim)}
+  .card .ch h3{font-size:18px;color:var(--card-ink);font-weight:600}
+  .card .ch .chip{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:11px;white-space:nowrap}
+  .chip.kill{background:rgba(170,73,58,.14);color:var(--oxblood);border:1px solid var(--oxblood)}
+  .chip.go{background:rgba(93,138,120,.16);color:#3f6e5c;border:1px solid var(--verdigris)}
+  .chip.open{background:rgba(168,122,38,.16);color:var(--ochre-deep);border:1px solid var(--ochre-deep)}
+  .card .cb{padding:18px 20px}
+  .card .cb p{margin-top:0;color:#3c3e38;max-width:none}
+  .card .cb p+p{margin-top:11px}
+  .chartbox{position:relative;height:300px;margin-top:6px}
+  .chartbox.tall{height:340px}
+  .cap{margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--card-dim);line-height:1.6}
+
+  /* CSS BAR CHARTS */
+  .bars{margin-top:6px;display:flex;flex-direction:column;gap:9px}
+  .barrow{display:grid;grid-template-columns:120px 1fr 56px;align-items:center;gap:11px}
+  .barrow .nm{font-family:var(--mono);font-size:11.5px;color:#54564e;text-align:right;line-height:1.2}
+  .barrow .tk{height:19px;background:#d4c9ad;border-radius:2px;overflow:hidden;position:relative}
+  .barrow .fl{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .barrow .vv{font-family:var(--mono);font-size:12px;color:var(--card-ink);text-align:right;font-weight:500}
+  .fl.ochre{background:linear-gradient(90deg,var(--ochre-deep),var(--ochre))}
+  .fl.indigo{background:linear-gradient(90deg,#46617f,var(--indigo))}
+  .fl.oxblood{background:linear-gradient(90deg,#8a3a2d,var(--oxblood))}
+  .fl.verd{background:linear-gradient(90deg,#487060,var(--verdigris))}
+  .fl.grey{background:linear-gradient(90deg,#9b9275,#b3a988)}
+
+  /* DATA TABLE */
+  .dt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin-top:6px}
+  .dt th,.dt td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--card-edge)}
+  .dt th:first-child,.dt td:first-child{text-align:left;color:#54564e}
+  .dt thead th{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--card-dim);font-weight:400}
+  .dt .hi{color:var(--ochre-deep);font-weight:600}
+  .dt .lo{color:var(--oxblood)}
+  .dt .match{color:#3f6e5c;font-weight:600}
+  .matchbar{display:inline-block;width:42px;height:6px;border-radius:3px;background:#d4c9ad;vertical-align:middle;position:relative;overflow:hidden}
+  .matchbar i{position:absolute;left:0;top:0;height:100%;background:var(--verdigris)}
+
+  /* TAKEAWAY */
+  .take{margin-top:15px;padding:13px 16px;background:#16140f;border-left:3px solid var(--ochre);border-radius:0 4px 4px 0}
+  .take p{color:var(--text);max-width:none;margin:0;font-size:15px}
+  .take b{color:var(--ochre)}
+
+  /* TECHNICAL DETAIL (toggle) */
+  .tech{margin-top:14px;border-left:2px solid var(--ground3);padding:2px 0 2px 16px;display:none}
+  body.show-tech .tech{display:block}
+  .tech .tt{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--indigo);margin-bottom:6px}
+  .tech p{font-size:15px;color:var(--text-dim);margin-top:8px}
+  .tech p:first-of-type{margin-top:0}
+  .tech-hint{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:12px}
+  body.show-tech .tech-hint{display:none}
+
+  /* ---------------- THE KEY (SVG signature) ---------------- */
+  .keywrap{margin-top:30px;display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start}
+  @media(max-width:760px){.keywrap{grid-template-columns:1fr}}
+  .keysvg{position:sticky;top:70px}
+  .keysvg svg{width:100%;height:auto;display:block}
+  .keysvg .nd{cursor:pointer}
+  .keysvg .nd circle{transition:.2s}
+  .keysvg .nd:hover circle{stroke:var(--ochre);stroke-width:3}
+  .keylegend{margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);line-height:1.8}
+  .keylegend .sw{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:6px}
+
+  .stations{display:flex;flex-direction:column;gap:14px}
+  .station{background:var(--ground2);border:1px solid var(--hair);border-radius:6px;padding:20px 22px;scroll-margin-top:80px}
+  .station .sh{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .station .num{font-family:var(--mono);font-size:12px;color:var(--ochre);border:1.5px solid var(--ochre-deep);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex:none}
+  .station .q{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .station h3{font-size:21px;color:#fff;margin-top:2px}
+  .station .plain{margin-top:10px;font-size:16.5px;color:var(--text)}
+  .station .exper{margin-top:10px;font-size:14.5px;color:var(--text-dim);font-style:italic}
+  .verdicts{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .vd{display:grid;grid-template-columns:24px 1fr;gap:11px;padding:12px 14px;border-radius:4px;background:var(--ground3)}
+  .vd.kill{border-left:3px solid var(--oxblood)}
+  .vd.go{border-left:3px solid var(--verdigris)}
+  .vd .mk{font-family:var(--mono);font-size:17px;line-height:1}
+  .vd.kill .mk{color:var(--oxblood)} .vd.go .mk{color:var(--verdigris)}
+  .vd .vt{font-size:15px;color:var(--text)}
+  .vd .vt b{color:#fff}
+  .vd .ev{display:block;margin-top:5px;font-family:var(--mono);font-size:11.5px;color:var(--ochre-deep);letter-spacing:.01em}
+
+  /* ---------------- VERDICT METER ---------------- */
+  .meter{margin-top:30px;display:flex;flex-direction:column;gap:16px}
+  .mrow{display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:center}
+  @media(max-width:620px){.mrow{grid-template-columns:1fr;gap:5px}.mrow .ml{text-align:left}}
+  .mrow .ml{font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:right;line-height:1.3}
+  .mrow .ml b{display:block;color:#fff;font-size:13.5px;font-family:var(--serif);font-weight:500}
+  .mbar{height:34px;background:var(--ground2);border:1px solid var(--hair);border-radius:3px;overflow:hidden;position:relative}
+  .mbar .mf{height:100%;display:flex;align-items:center;padding-left:13px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;white-space:nowrap;color:#000;font-weight:600}
+  .mbar.dead .mf{background:linear-gradient(90deg,#3a4149,#4d555e);color:var(--text-dim)}
+  .mbar.weak .mf{background:linear-gradient(90deg,var(--oxblood),#c4634f)}
+  .mbar.live .mf{background:linear-gradient(90deg,var(--ochre-deep),var(--ochre))}
+
+  /* ---------------- RECIPE ---------------- */
+  .recipe{counter-reset:s;margin-top:22px}
+  .rs{display:grid;grid-template-columns:38px 1fr;gap:16px;padding:15px 0;border-top:1px solid var(--hair)}
+  .rs::before{counter-increment:s;content:counter(s);font-family:var(--mono);font-size:13px;color:var(--ochre);width:32px;height:32px;border:1px solid var(--ochre-deep);border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .rs h4{font-size:16px;color:#fff;font-weight:500}
+  .rs p{margin-top:3px;font-size:15px;color:var(--text-dim)}
+  .vy{font-family:var(--mono);background:#0a0d10;color:var(--ochre);padding:1px 5px;border-radius:2px;font-size:.84em}
+
+  .pull{font-family:var(--disp);font-size:25px;line-height:1.4;font-style:italic;color:#fff;margin:30px 0;padding-left:22px;border-left:3px solid var(--ochre);font-weight:400}
+  .pull b{font-style:normal;color:var(--ochre);font-weight:500}
+
+  /* ---------------- GLOSSARY SECTION ---------------- */
+  .gloss{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:6px;overflow:hidden;margin-top:24px}
+  @media(max-width:620px){.gloss{grid-template-columns:1fr}}
+  .gi{background:var(--ground2);padding:15px 18px}
+  .gi dt{font-family:var(--mono);font-size:12px;color:var(--ochre);letter-spacing:.04em;margin-bottom:4px}
+  .gi dd{font-size:14.5px;color:var(--text-dim);line-height:1.5}
+
+  /* CAVEATS */
+  .caveat{margin-top:26px;background:var(--ground2);border:1px solid var(--oxblood);border-radius:6px;padding:20px 22px}
+  .caveat h3{font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--oxblood);margin-bottom:10px}
+  .caveat p{font-size:14.5px;color:var(--text-dim);margin-top:8px}
+
+  /* DOORS */
+  .door{background:var(--ground2);border:1px solid var(--hair);border-radius:6px;padding:18px 20px;margin-top:14px}
+  .door .dh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .door .dnum{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ochre)}
+  .door h3{font-size:18px;color:#fff}
+  .door p{font-size:15px;color:var(--text-dim)}
+
+  /* GLOSSARY BOTTOM SHEET */
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    background:var(--card);color:var(--card-ink);border-top:2px solid var(--ochre);
+    box-shadow:0 -16px 40px -16px rgba(0,0,0,.7);padding:20px 22px 26px}
+  .sheet.up{transform:translateY(0)}
+  .sheet .st{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ochre-deep);margin-bottom:6px}
+  .sheet .sd{font-family:var(--disp);font-size:21px;font-weight:600;margin-bottom:8px}
+  .sheet .sb{font-size:15.5px;color:#3c3e38;max-width:60ch;line-height:1.55}
+  .sheet .x{position:absolute;top:14px;right:18px;font-family:var(--mono);font-size:13px;color:var(--card-dim);cursor:pointer;border:1px solid var(--card-edge);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+  .sheet .wrap2{max-width:780px;margin:0 auto;position:relative}
+
+  footer{padding:54px 0 80px}
+  .fn{font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.85;max-width:72ch}
+  @media (prefers-reduced-motion:reduce){.drift{animation:none}.barrow .fl{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<div class="topbar">
+  <div class="row">
+    <span class="id">BEINECKE MS 408 · <b>Forensic Reading</b></span>
+    <span class="spacer"></span>
+    <span class="toggle" id="techToggle"><span class="sw"></span>Technical detail</span>
+  </div>
+  <div class="progress"><div class="fill" id="prog"></div></div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="driftwrap" id="driftwrap"></div>
+  <div class="wrap">
+    <div class="badge">A Twelve-Experiment Investigation</div>
+    <h1>The Withered <em>Key</em></h1>
+    <p class="thesis">It looks like language. It cannot <em>be</em> language. We ran twelve experiments to find out which — and <b>where the message would be hiding if it were real.</b></p>
+    <div class="meta">
+      <span><b>SUBJECT</b> the world's most famous unread book</span>
+      <span><b>TEXT</b> 15,588 words, Currier B</span>
+      <span><b>CONTROLS</b> a real cipher · 8 languages</span>
+      <span><b>VERDICT</b> generated, not written — with one open door</span>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO / PARADOX -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The hundred-year trap</div>
+    <h2 class="head">A book that is too tidy to be language, and too structured to be noise</h2>
+    <p class="lede">Every serious theory of the Voynich manuscript must explain a contradiction. Measured one way, it behaves like a real written tongue. Measured another, like nothing humans speak. We began by taking its fingerprints and laying them beside real Latin.</p>
+
+    <div class="card">
+      <div class="ch"><span class="lab">Baseline · forensic comparison</span><h3>The split personality</h3></div>
+      <div class="cb">
+        <p>Two numbers contain the whole paradox. <span class="term" data-term="entropy">Symbol variety</span> looks completely normal — but the predictability of the <em>next</em> symbol collapses to nearly half of Latin's. The words are built from rigid moulds, not from the free flow of speech.</p>
+        <div class="bars" style="margin-top:16px">
+          <div class="barrow"><span class="nm">Symbol variety<br><span style="font-size:9px">(want: similar)</span></span><div class="tk"><div class="fl ochre" data-w="99"></div></div><span class="vv">3.97</span></div>
+          <div class="barrow"><span class="nm">Latin, same</span><div class="tk"><div class="fl grey" data-w="100"></div></div><span class="vv">3.99</span></div>
+          <div class="barrow"><span class="nm">Next-symbol surprise<br><span style="font-size:9px">(collapsed!)</span></span><div class="tk"><div class="fl oxblood" data-w="58"></div></div><span class="vv">1.85</span></div>
+          <div class="barrow"><span class="nm">Latin, same</span><div class="tk"><div class="fl grey" data-w="100"></div></div><span class="vv">3.16</span></div>
+        </div>
+        <div class="chartbox" style="margin-top:22px"><canvas id="wlChart"></canvas></div>
+        <div class="cap">Word-length distribution. Voynichese words crowd into a single unnatural peak at five glyphs; real language spreads wide with a long tail. A tight peak is what you get when words are assembled from fixed slots.</div>
+        <div class="chartbox tall" style="margin-top:24px"><canvas id="zipfChart"></canvas></div>
+        <div class="cap">…and yet, on a log–log plot, both obey <span class="term" data-term="zipf">Zipf's law</span> — the universal frequency curve of real language. This is the paradox in one image: structured like a tongue, built like a machine.</div>
+        <div class="take"><p><b>The trap:</b> normal variety and textbook Zipf say "language"; collapsed surprise and moulded words say "not language." Everything that follows is an attempt to escape this pincer — by elimination.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE DICHOTOMOUS KEY -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The method</div>
+    <h2 class="head">A dichotomous key — for a manuscript</h2>
+    <p class="lede">A Renaissance herbalist identified an unknown plant with a <em>dichotomous key</em>: a ladder of either/or tests, each halving what remains. We did the same to the manuscript. Below, the investigation grows as a specimen — a stem of surviving reasoning, with each <span style="color:var(--oxblood)">falsified theory a withered leaf</span> that drops away, and the verdict as the fruit. Tap any node to jump to its experiment.</p>
+
+    <div class="keywrap">
+      <div class="keysvg">
+        <svg viewBox="0 0 300 720" aria-label="Dichotomous key diagram">
+          <defs>
+            <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5d8a78"/><stop offset="0.6" stop-color="#8a9a52"/><stop offset="1" stop-color="#cf9a3a"/>
+            </linearGradient>
+          </defs>
+          <!-- main stem -->
+          <path d="M150 28 C 150 120, 150 120, 150 200 C 150 290, 150 290, 150 380 C 150 470, 150 470, 150 560 C 150 610, 150 610, 150 648"
+                fill="none" stroke="url(#stem)" stroke-width="5" stroke-linecap="round"/>
+          <!-- withered leaves (killed) -->
+          <g stroke="#aa493a" stroke-width="2" fill="none" opacity=".8">
+            <path d="M150 92 C 110 84, 86 96, 70 84"/><text x="64" y="80" font-family="var(--mono)" font-size="9" fill="#aa493a" text-anchor="end">✕ noise</text>
+            <path d="M150 158 C 192 150, 214 164, 232 150"/><text x="236" y="146" font-family="ui-monospace" font-size="9" fill="#aa493a">✕ card-cipher</text>
+            <path d="M150 246 C 110 240, 84 252, 66 240"/><text x="60" y="236" font-family="ui-monospace" font-size="9" fill="#aa493a" text-anchor="end">✕ Czech</text>
+            <path d="M150 312 C 192 306, 214 318, 232 306"/><text x="236" y="302" font-family="ui-monospace" font-size="9" fill="#aa493a">✕ fake spaces</text>
+            <path d="M150 398 C 108 392, 82 404, 62 392"/><text x="56" y="388" font-family="ui-monospace" font-size="9" fill="#aa493a" text-anchor="end">✕ agglutinative</text>
+            <path d="M150 430 C 108 436, 82 448, 62 436"/><text x="56" y="452" font-family="ui-monospace" font-size="9" fill="#aa493a" text-anchor="end">✕ state-cipher</text>
+            <path d="M150 506 C 192 500, 214 512, 234 500"/><text x="238" y="496" font-family="ui-monospace" font-size="9" fill="#aa493a">✕ grid/table</text>
+            <path d="M150 540 C 192 546, 214 558, 234 546"/><text x="238" y="562" font-family="ui-monospace" font-size="9" fill="#aa493a">✕ enciphered prose</text>
+          </g>
+          <!-- nodes -->
+          <g font-family="ui-monospace" font-size="11" font-weight="600" text-anchor="middle">
+            <g class="nd" data-go="fork-1"><circle cx="150" cy="92" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="96" fill="#cf9a3a">1</text></g>
+            <g class="nd" data-go="fork-2"><circle cx="150" cy="158" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="162" fill="#cf9a3a">2</text></g>
+            <g class="nd" data-go="fork-3"><circle cx="150" cy="246" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="250" fill="#cf9a3a">3</text></g>
+            <g class="nd" data-go="fork-4"><circle cx="150" cy="312" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="316" fill="#cf9a3a">4</text></g>
+            <g class="nd" data-go="fork-5"><circle cx="150" cy="414" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="418" fill="#cf9a3a">5</text></g>
+            <g class="nd" data-go="fork-6"><circle cx="150" cy="523" r="13" fill="#161c24" stroke="#cf9a3a" stroke-width="2"/><text x="150" y="527" fill="#cf9a3a">6</text></g>
+          </g>
+          <!-- fruit: verdict -->
+          <g class="nd" data-go="verdict">
+            <circle cx="150" cy="668" r="22" fill="#cf9a3a" stroke="#a87a26" stroke-width="2"/>
+            <circle cx="150" cy="668" r="9" fill="#161c24"/>
+          </g>
+          <text x="150" y="706" font-family="ui-monospace" font-size="9.5" fill="#cf9a3a" text-anchor="middle" letter-spacing="1">THE VERDICT</text>
+        </svg>
+        <div class="keylegend">
+          <div><span class="sw" style="background:var(--oxblood)"></span>falsified — branch closed</div>
+          <div><span class="sw" style="background:var(--verdigris)"></span>survived — reasoning continues</div>
+          <div><span class="sw" style="background:var(--ochre)"></span>the ripened conclusion</div>
+        </div>
+      </div>
+
+      <div class="stations">
+        <!-- FORK 1 -->
+        <div class="station" id="fork-1">
+          <div class="sh"><span class="num">1</span><span class="q">Couplet 1 — meaningful at all?</span></div>
+          <h3>Noise, or structure?</h3>
+          <p class="plain">First question: is there any system here, or is it random scribbling? We pointed an attack that recovers letters from real coded text at the manuscript, and asked whether it finds more than it finds in shuffled gibberish.</p>
+          <p class="exper">Experiment: measure word-to-word information against a shuffled-text floor.</p>
+          <div class="verdicts">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>Pure noise</b> — eliminated. Word order carries real, repeatable information.<span class="ev">word-to-word info 0.100 bits · Latin 0.104 · shuffled floor 0.015</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>Structured.</b> Something systematic made this. Descend.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>Mutual information between adjacent word-classes (top-60 + OTHER bucketing), shuffle-corrected. The VM's 0.100 bits is within 4% of De Bello Gallico under the identical protocol and ~7× the shuffled baseline — placing it firmly in the regime of genuine sequential dependence, not a memoryless source.</p></div>
+          <p class="tech-hint mono">▸ enable "Technical detail" above for the methods behind each fork</p>
+        </div>
+
+        <!-- FORK 2 -->
+        <div class="station" id="fork-2">
+          <div class="sh"><span class="num">2</span><span class="q">Couplet 2 — the newest theory</span></div>
+          <h3>A simple card-cipher? <span style="font-size:13px;color:var(--text-dim)">(the 2025 "Naibbe" claim)</span></h3>
+          <p class="plain">In 2025 a researcher showed that real Latin, enciphered by hand with a table and playing cards — all 15th-century technology — produces text that <em>measures</em> like Voynichese. We rebuilt his method exactly, then tested whether the real manuscript actually behaves like its output.</p>
+          <p class="exper">Experiment: three fingerprints — the homophone frequency ratios, their dependence on position, and the cross-word memory.</p>
+          <div class="verdicts">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>One word = one randomized chunk</b> — falsified three independent ways.<span class="ev">homophone ratios 8:7:4:2:1:1 ≠ deck's 4:2:1.6:1.6:1:1 · choice shifts with line position (cards can't) · 100× too much cross-word memory</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>But a real signature survived:</b> the cipher's tell-tale <span class="term" data-term="homophone">homophone families</span> <em>are</em> present — clusters that swap interchangeably (<span class="vy">chedy/shedy/sheedy/cheedy</span>). Whatever this is, it has a decorative spelling-variation layer.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>We re-implemented Greshko's Naibbe tables and encrypted DBG to obtain ground-truth ciphertext. Context-vector homophone detection recovered true homophones at 73% nearest-neighbour precision on synthetic, and surfaced the chedy-family blind on the VM. Discriminators: (i) the family's rank-frequency profile correlates 0.99 with the deck only for synthetic, not VM; (ii) <span class="term" data-term="cramer">Cramér's V</span> of member-choice vs next word = 0.21 for VM, near the 0.14–0.17 pure-randomness floor, but the choice is positionally conditioned; (iii) a hidden-state model recovers 100× the cross-word structure a memoryless cipher can emit. Card-randomisation is excluded; homophony as a <em>property</em> is retained.</p></div>
+        </div>
+
+        <!-- FORK 3 -->
+        <div class="station" id="fork-3">
+          <div class="sh"><span class="num">3</span><span class="q">Couplet 3 — which tongue?</span></div>
+          <h3>An enciphered language — and if so, which?</h3>
+          <p class="plain">If it's a real language in disguise, which one? We built a "language ladder": score the manuscript against eight candidates, using genuine ciphertext in each as the calibration ceiling. Czech and Hungarian have been proposed for a century. English was slipped in as a control that <em>should</em> fail — if it scored high, our method would be broken.</p>
+          <p class="exper">Experiment: calibrated key-search lift, per language, per manuscript region.</p>
+          <div class="chartbox tall" style="margin-top:8px"><canvas id="ladderChart"></canvas></div>
+          <div style="text-align:center;margin-top:8px"><button id="ladderToggle" class="mono" style="background:var(--ground3);color:var(--ochre);border:1px solid var(--hair);border-radius:4px;padding:6px 14px;font-size:11px;letter-spacing:.06em;cursor:pointer;text-transform:uppercase">Showing: B-region · tap to switch</button></div>
+          <div class="verdicts" style="margin-top:16px">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>Czech</b> — eliminated, despite the manuscript's Prague history. Worst fit of all eight, at the noise floor, in every region and every random seed.<span class="ev">Czech −5% to +12% · English control 39% · the method discriminates correctly</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>The plaintext, if any, is Romance-shaped.</b> Italian, Latin, French and (surprisingly) Hungarian cluster at the top. But the cipher smears the whole family together — the ladder names a <em>family</em>, not a language. And French topping it, which no scholar proposes, is the method confessing its own ceiling.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>Per language: 18-symbol letter model (unigram freq + bigram log-probs) from a period corpus, scored via simulated-annealing key search on the homophone-merged class stream, lift normalised between a shuffled floor and a self-enciphered ceiling, 3 seeds. Controls behaved correctly: English (implausible) 39%, Czech at/below floor. The top cluster (French 81 / Hungarian 65 / German 63 / Latin 62 / Italian 60, B-region) is within-jitter and reflects Romance-family letter-transition resemblance, not language identity — the cipher's homophone smearing destroys within-family resolution. Hungarian's persistence despite a 23-letter Latinisation penalty is the one genuine surprise.</p></div>
+        </div>
+
+        <!-- FORK 4 -->
+        <div class="station" id="fork-4">
+          <div class="sh"><span class="num">4</span><span class="q">Couplet 4 — the spaces</span></div>
+          <h3>Are the word-boundaries even real?</h3>
+          <p class="plain">A slot-by-slot dissection of word anatomy showed information leaking <em>across</em> the gaps between words — seven times more than in real language. So maybe the spaces are fake, inserted to disguise a continuous stream. We tested it directly: delete every space, and let an algorithm re-discover the best boundaries.</p>
+          <p class="exper">Experiment: unsupervised re-segmentation, validated on de-spaced Latin and cipher first.</p>
+          <div class="chartbox" style="margin-top:8px"><canvas id="boundaryChart"></canvas></div>
+          <div class="verdicts" style="margin-top:16px">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>"The spaces are fake"</b> — rejected. The algorithm's best boundaries agreed with the scribe's spaces <em>better</em> than they agree with real Latin's own optimum. The words are genuine units.<span class="ev">boundary agreement F1 0.67 · Latin's own 0.62 · re-segmenting reduced structure</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>Real words, real spaces</b> — but the cross-boundary leakage is real and still needs a mechanism. Descend.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>Unigram-LM segmenter (hard-EM, Viterbi decode) trained on the de-spaced glyph stream. Validation: recovers true boundaries at F1 0.62 (Latin) / 0.69 (Naibbe). On VM it agrees with scribal spaces at F1 0.67 and lowers sequential MI (0.251→0.228) — no superior latent segmentation exists. Separately, cross-boundary/within-word glyph-MI ratio is 0.15 (VM-B) vs 0.05 (Latin), and space placement is 80% predictable from adjacent glyphs (Latin 40%): the boundaries are real but unusually permeable, motivating Fork 5.</p></div>
+        </div>
+
+        <!-- FORK 5 -->
+        <div class="station" id="fork-5">
+          <div class="sh"><span class="num">5</span><span class="q">Couplet 5 — the deep fork</span></div>
+          <h3>A language's grammar, or a machine's carry-rule?</h3>
+          <p class="plain">The crux. Either the cross-word flow is real <em>grammar</em> (a language) or a mechanical <em>carry</em> linking each word to the next (a cipher with memory). Four probes, each making opposite predictions: vowel-harmony, how freely word-pieces recombine, how concentrated the linking is, and a hidden-state machine fitted against both controls.</p>
+          <p class="exper">Experiment: vowel harmony · morphological productivity · link-state count · <span class="term" data-term="hmm">HMM</span> model selection.</p>
+          <div class="chartbox tall" style="margin-top:8px"><canvas id="hmmChart"></canvas></div>
+          <div class="cap">Hidden-state model selection. Adding hidden "memory" states lifts how well a model predicts each text. The genuine card-cipher (grey) is <b>flat</b> — it has no memory to find. The manuscript (gold) climbs <em>higher than real Latin</em> — but, crucially, it never plateaus at a small number of states.</div>
+          <div class="verdicts" style="margin-top:16px">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>An agglutinative language (Hungarian-style)</b> — strongly doubted. No vowel harmony (4% vs Hungarian's 16%); word-pieces recombine far too freely to be real grammar (25% vs language's 7%).<span class="ev">the Hungarian ladder result was family-resemblance, not real morphology</span></span></div>
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>A finite-state carry-cipher</b> — disfavoured. The hidden-state machine found real structure (173% of Latin's, 100× the cipher's) but it <em>never plateaued</em> at a few clean states. A mechanical carry would show a small state set; this showed many, diffuse, language-shaped.<span class="ev">likelihood still climbing at 12+ states, same curve-shape as Latin</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>Grammar-strength sequencing, but no clean machine and no real morphology.</b> Neither prong fits. Descend — to the line.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>E1 first–last vowel-slot MI: VM 4.2% vs Hungarian 16.4%, English 11.7% (Latin 1.0%, Naibbe 2.6%) — no harmony. E2 stem×suffix productivity: 25% multi-suffix stems vs ~7% in natural language, adjacent to Naibbe's 38% — combinatorially promiscuous. E3 next-initial uncertainty removed by prev-ending: 10.9% via only 30 end-types (Latin 14.3% via 70; Naibbe 5.6%) — concentrated linking. E4 Baum–Welch held-out per-token LL gain over K=1: VM +0.077 nats, Latin +0.025, Naibbe +0.000; VM gain = 173% of Latin, 112× Naibbe — but monotone to K=12 with no knee, i.e. distributed (syntactic-shaped) not finite-state.</p></div>
+        </div>
+
+        <!-- FORK 6 -->
+        <div class="station" id="fork-6">
+          <div class="sh"><span class="num">6</span><span class="q">Couplet 6 — the smoking gun</span></div>
+          <h3>What is the unit of generation?</h3>
+          <p class="plain">We tagged every word with its grammatical class and asked one question three ways: what predicts the next word — its <em>position</em> in the line, or the <em>word before it</em>? And the decisive test: does the grammar flow <em>across</em> the line break, as every real sentence must?</p>
+          <p class="exper">Experiment: predictor shoot-out (position vs previous word) and grammar-flow across line breaks.</p>
+          <div class="chartbox" style="margin-top:8px"><canvas id="predChart"></canvas></div>
+          <div class="verdicts" style="margin-top:16px">
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>A grid walked column-by-column</b> — ruled out. Position predicts almost nothing (1.8%); the previous word predicts half of everything (50%). The mechanism is a left-to-right chain, not a grid.<span class="ev">position 1.8% vs previous-word 50.3%</span></span></div>
+            <div class="vd kill"><span class="mk">✕</span><span class="vt"><b>Enciphered flowing prose</b> — the disproof. Within a line, word-to-word grammar is nearly Latin-strength. Across a line break it is <em>zero</em>. Real sentences run past the margin; this text resets at it. <em>Meaning does not cross the line.</em><span class="ev">within-line grammar 1.48 bits · across-the-break 0.003 ≈ nothing</span></span></div>
+            <div class="vd go"><span class="mk">→</span><span class="vt"><b>The line is the unit.</b> Each line is generated left-to-right from a fresh starting word, then the process resets at the next line. One mechanism explains the entire pile of anomalies.</span></div>
+          </div>
+          <div class="tech"><div class="tt">Technical</div><p>K=8 Viterbi class tags. Conditional-entropy reduction of next class: by line-position 1.8%, by previous class 50.3% (Latin 0.4% / 64.9%; Naibbe 0.3% / 47.8%) — chain-driven, not positional, with a flat per-position gradient (no reset-decay rightward). Within-line class MI 1.475 bits vs across-line-break 0.003 (Latin 1.668 / 0.019). The near-total severance at line boundaries, combined with tripled sentence-edge marking (edgeKL 0.690 vs Latin 0.222), is incompatible with running prose and diagnostic of per-line generation with hard reset.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RECONSTRUCTION -->
+<section style="background:var(--ground2)">
+  <div class="wrap">
+    <div class="eyebrow">The reconstruction — proving a generator did this</div>
+    <h2 class="head">We built the machine. It fooled the manuscript's own statistics.</h2>
+    <p class="lede">Sufficiency is the real test of a theory. We fitted the per-line reset-chain on <em>one half</em> of the manuscript, generated brand-new text, and compared it against the <em>other half it had never seen</em>. If the model is right, the forgery should be statistically indistinguishable from the real thing across every fingerprint we'd collected.</p>
+
+    <div class="card">
+      <div class="ch"><span class="lab">Held-out reconstruction</span><h3>Generated text vs the unseen half</h3><span class="chip go">8 / 11 match</span></div>
+      <div class="cb">
+        <table class="dt">
+          <thead><tr><th>Fingerprint</th><th>Real</th><th>Made</th><th>Match</th></tr></thead>
+          <tbody>
+            <tr><td>Next-symbol surprise</td><td>1.69</td><td>1.72</td><td class="match"><span class="matchbar"><i style="width:98%"></i></span></td></tr>
+            <tr><td>Mean word length</td><td>4.65</td><td>4.69</td><td class="match"><span class="matchbar"><i style="width:99%"></i></span></td></tr>
+            <tr><td>Zipf slope</td><td>−0.71</td><td>−0.70</td><td class="match"><span class="matchbar"><i style="width:99%"></i></span></td></tr>
+            <tr><td>Stutter (repeats /1k)</td><td>10.3</td><td>9.8</td><td class="match"><span class="matchbar"><i style="width:95%"></i></span></td></tr>
+            <tr><td>Line-start <span class="vy">y-</span> %</td><td>1.2</td><td>1.3</td><td class="match"><span class="matchbar"><i style="width:92%"></i></span></td></tr>
+            <tr><td>Line-end <span class="vy">-m</span> flourish %</td><td>15.9</td><td>17.8</td><td class="match"><span class="matchbar"><i style="width:89%"></i></span></td></tr>
+            <tr><td>Grammar across line break</td><td>−0.016</td><td>−0.017</td><td class="match"><span class="matchbar"><i style="width:99%"></i></span></td></tr>
+            <tr><td>Mid-line <span class="vy">-m</span> leakage %</td><td class="hi">0.5</td><td class="lo">2.9</td><td><span class="matchbar"><i style="width:40%;background:var(--oxblood)"></i></span></td></tr>
+          </tbody>
+        </table>
+        <div class="take"><p><b>The proof:</b> a procedure simple enough to run by hand, fitted on half the book, reproduces the unseen half's deep statistics — entropy, word-shape, Zipf, the stutter, the line-rituals, and the tell-tale severed margins. The one real miss is revealing: the actual scribe was <em>more</em> disciplined about the line-final flourish than our crude rule. <b>A generator demonstrably can produce this manuscript.</b></p></div>
+      </div>
+    </div>
+
+    <h2 class="head" style="margin-top:48px;font-size:25px">The recipe — how a person could do this in 1420</h2>
+    <p style="color:var(--text-dim);margin-top:10px">Translated out of mathematics: one practiced scribe, a habit-table held in memory, an afternoon. No arithmetic required.</p>
+    <div class="recipe">
+      <div class="rs"><div><h4>Open the line</h4><p>Begin each new line by choosing from a small set of "starter" words.</p></div></div>
+      <div class="rs"><div><h4>Chain word to word</h4><p>Look at the word you just wrote; write one of its habitual followers. After a few pages the hand knows what comes next on its own.</p></div></div>
+      <div class="rs"><div><h4>Decorate the spelling</h4><p>Vary each word cosmetically — <span class="vy">ch</span>↔<span class="vy">sh</span>, stretch the <span class="vy">e</span>'s, swap the endings. This manufactures the "homophone families" and the shimmering sameness.</p></div></div>
+      <div class="rs"><div><h4>Close with a flourish, then reset</h4><p>End the line on a tail-stroke word (often <span class="vy">-m</span>). Then start the next line fresh, ignoring all that came before. <em>This reset is the signature the statistics caught.</em></p></div></div>
+      <div class="rs"><div><h4>Let your habits drift</h4><p>Favour different words on different days. This alone produces page-by-page "topic" clustering — without any topics.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- THE INVERSE -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The inverse — hunting the message</div>
+    <h2 class="head">We tried to break our own conclusion</h2>
+    <p class="lede">A sufficient generator does not prove a message is <em>absent</em>. So we did the opposite of everything above: we hunted for hidden content across six channels where a 15th-century author could smuggle one — each tested against message-free decoy text. Five came back empty. One did not.</p>
+
+    <div class="card">
+      <div class="ch"><span class="lab">Adversarial message hunt</span><h3>Six hiding-places vs decoy text</h3></div>
+      <div class="cb">
+        <p>The <span class="term" data-term="zscore">z-score</span> measures how far the manuscript departs from message-free decoys. Inside the shaded band (±3) means "indistinguishable from no-message." Only one channel escapes it.</p>
+        <div class="chartbox" style="margin-top:14px"><canvas id="huntChart"></canvas></div>
+        <div class="cap">Negative bars mean the manuscript has <em>less</em> structure than a decoy — the opposite of a hidden signal. Word-length and rare-word channels (not shown) flagged weakly but trace to varying line-lengths, an artefact of the decoy, not a message.</div>
+        <div class="take"><p><b>The honest result:</b> every channel a hidden cipher would use is empty or <em>below</em> random — except one. Mid-frequency words travel in correlated <b>sets</b>, clustering page by page far beyond any message-free process. That is the statistical shadow of <em>topics</em>. It is the one thing we could not explain away.</p></div>
+      </div>
+    </div>
+
+    <p class="lede" style="margin-top:34px">That single surviving channel decided the ending. We attacked it with two more experiments — the two "doors" that text alone can open.</p>
+
+    <div class="door">
+      <div class="dh"><span class="dnum">Door 2 — recurrence vs drift</span><span class="chip open">weak signal · z +3.4</span></div>
+      <h3>Do distant pages echo each other?</h3>
+      <p>A tiring hand drifts <em>one way</em> and never returns. Real topics <em>recur</em> — a subject can reappear forty pages later. We built the page-to-page vocabulary-similarity map and looked for distant echoes beyond what drift produces.</p>
+      <div class="chartbox" style="margin-top:12px;height:240px"><canvas id="door2Chart"></canvas></div>
+      <p style="margin-top:12px"><strong>Result:</strong> four distant folio-pairs share vocabulary far beyond their separation (f103↔f116, f104↔f114, f76↔f103, f76↔f108) — a drifting hand produces ~0.8 such echoes; the manuscript has four (z = +3.4). A faint <em>real</em> tendency to recur. A point toward genuine organisation.</p>
+    </div>
+
+    <div class="door">
+      <div class="dh"><span class="dnum">Door 4 — the function-word backbone</span><span class="chip kill">decisive · anti-language</span></div>
+      <h3>Does it have the skeleton of a language?</h3>
+      <p>Every real language has a backbone of <em>function words</em> — the/of/and — that appear evenly <em>everywhere</em>, holding the grammar together, while content words cluster by topic. So real text is bursty for content words and flat for function words. We checked whether the manuscript's clustering splits that way.</p>
+      <div class="chartbox" style="margin-top:12px"><canvas id="door4Chart"></canvas></div>
+      <div class="cap" style="color:var(--text-dim)">In real language the bars would <em>rise</em> left-to-right: flat common words, bursty rare words. The manuscript is <b>inverted</b> — its most frequent words are its most clustered. It has no function-word floor.</div>
+      <p style="margin-top:12px"><strong>Result:</strong> the dispersion ratio is <strong>0.24</strong> — the <em>inverse</em> of every natural language (which exceeds 1). The clustering is real, but it is <em>anti-linguistic</em>: clusters of bursty common words, not a function-word grammar. Even a drift-generator (0.37) is less skewed than the manuscript (z = −5.4).</p>
+    </div>
+
+    <div class="take" style="margin-top:24px"><p><b>The two doors resolve the channel — by disagreeing.</b> The page-clustering is genuine (Door 2 confirms even faint long-range recurrence), but it has no function-word backbone (Door 4). It is real structure of a kind that is <em>not</em> how meaning is organised in a natural tongue. The "tired hand" explanation is now also insufficient; the "real language underneath" explanation is firmly rejected. What survives is the architecture of the <em>generator itself</em> — different word-stocks for different sections of the book.</p></div>
+  </div>
+</section>
+
+<!-- VERDICT -->
+<section style="background:var(--ground2)" id="verdict">
+  <div class="wrap">
+    <div class="eyebrow">Where it lands</div>
+    <h2 class="head">Four theories went in. This is how they came out.</h2>
+    <div class="meter">
+      <div class="mrow"><div class="ml"><b>Random gibberish</b>meaningless scribbles</div><div class="mbar dead"><div class="mf" style="width:14%">RULED OUT</div></div></div>
+      <div class="mrow"><div class="ml"><b>A simple cipher</b>one word = one coded chunk</div><div class="mbar dead"><div class="mf" style="width:22%">RULED OUT</div></div></div>
+      <div class="mrow"><div class="ml"><b>An enciphered language</b>real text in a secret script</div><div class="mbar weak"><div class="mf" style="width:46%">STRONGLY DOUBTED</div></div></div>
+      <div class="mrow"><div class="ml"><b>A generated artefact</b>words made by a hand-method</div><div class="mbar live"><div class="mf" style="width:90%">BEST FIT — one open door</div></div></div>
+    </div>
+
+    <p class="pull">It is <b>not</b> noise, <b>not</b> a simple cipher, and almost certainly <b>not</b> enciphered prose. The best explanation is a <b>hand-executable generative performance</b> — a procedure that manufactures the <em>appearance</em> of language, line by line. One residual, the way words cluster by page, keeps a single door open to genuine content — but it is anti-linguistic, and most likely reflects the <em>architecture of the generator</em>, not a hidden message.</p>
+
+    <p style="color:var(--text-dim)">If the maker's goal was a beautiful, mystical, <em>convincing</em> book — something that would look meaningful to any onlooker for centuries — then on this evidence they succeeded almost completely. The manuscript fools every measure of language a reader can perceive, while failing the measures only a machine can see. That is not the fingerprint of a failed cipher. It is the fingerprint of a <strong>triumphant illusion</strong>.</p>
+
+    <p style="color:var(--text-dim)">And yet, honesty forbids the clean ending. The topic-clustering is real and unexplained by generation alone. It may be a craftsman working in deliberate sections — herbal, then bathing, then stars — each with its own word-stock. It may be the faint heat of a real subject underneath. The text cannot say which. So the case closes where every honest Voynich investigation should: <strong>a far narrower mystery than we started with, with the one remaining doubt named precisely.</strong></p>
+
+    <div class="caveat">
+      <h3>What this report does not claim</h3>
+      <p>— It does not claim to have <em>decoded</em> anything. No plaintext was recovered.</p>
+      <p>— It does not <em>prove</em> a message is absent. It shows no message survives in any tested channel — which is weaker, and honest.</p>
+      <p>— Findings are for Currier "Language B" (biological &amp; recipe folios). The A-region behaves differently and was only partly tested.</p>
+      <p>— The <span class="vy">ch</span>↔<span class="vy">sh</span> families may be partly scribal spelling variation rather than a designed layer; both readings fit.</p>
+      <p>— All conclusions are statistical. The controls behaved correctly throughout — which is what gives them force — but statistics on 15,588 words near the theoretical <span class="term" data-term="unicity">unicity limit</span> cannot be the last word.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NEXT -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Reflection — the one door text cannot open</div>
+    <h2 class="head">If a message is anywhere, it is in the pictures</h2>
+    <p class="lede">Every textual channel is now closed or explained. The clustering is real but anti-linguistic — which means the last question is no longer about the words at all. It is whether the generator's "sections" line up with the <em>illustrations</em>. That requires the folio images, a different kind of analysis than anything run here, and it is the genuine tiebreaker.</p>
+    <div class="door"><div class="dh"><span class="dnum">The decisive test</span><span class="chip open">untried · needs the images</span></div><h3>Do the word-clusters track the drawings?</h3><p>If the pages sharing a word-stock also share botanical or visual features — if the "cluster" of bathing pages is where the bathing illustrations are — that is deliberate authorial structure, and possibly content. No text-internal process knows what is drawn on the page; only cross-referencing the imagery can break the final ambiguity between <em>sectioned generator</em> and <em>real subject matter</em>.</p></div>
+    <div class="door"><div class="dh"><span class="dnum">The definitive control</span><span class="chip open">untried · settles the null</span></div><h3>Hand the recipe to a human</h3><p>Have a person generate 5,000 words by the five-step recipe above, then run the entire battery on their output. If <em>their</em> meaningless text also clusters at z≈15, drift in sections is sufficient and the last door closes. If it cannot, the manuscript has something a human generator does not — and the case for content strengthens.</p></div>
+  </div>
+</section>
+
+<!-- GLOSSARY -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">For the curious</div>
+    <h2 class="head">Glossary</h2>
+    <p class="lede">Every technical term in this report, in plain language. Dashed-underlined words above are tappable too.</p>
+    <dl class="gloss">
+      <div class="gi"><dt>Conditional entropy</dt><dd>How surprising the next symbol is, given the current one. Real language is fairly unpredictable; the Voynich is far too predictable, meaning its words follow rigid moulds.</dd></div>
+      <div class="gi"><dt>Zipf's law</dt><dd>The universal pattern where the 2nd most common word appears half as often as the 1st, the 3rd a third as often, and so on. Real languages obey it — and so, strangely, does the Voynich.</dd></div>
+      <div class="gi"><dt>Homophone</dt><dd>Different symbols that secretly mean the same thing — a classic cipher trick to disguise letter frequencies. The Voynich has families of interchangeable words that behave this way.</dd></div>
+      <div class="gi"><dt>Mutual information (MI)</dt><dd>A measure, in bits, of how much knowing one thing tells you about another — here, how much one word predicts the next. Zero means no relationship.</dd></div>
+      <div class="gi"><dt>Cramér's V</dt><dd>A 0-to-1 score of how strongly two categories are linked. Near 0 means independent (random); higher means context-driven, as real words are.</dd></div>
+      <div class="gi"><dt>HMM / Baum–Welch</dt><dd>A "hidden-state machine" — a model that assumes invisible states drive what you observe, and an algorithm that learns them from data. Used here to test for hidden cipher "memory."</dd></div>
+      <div class="gi"><dt>Currier A / B</dt><dd>The Voynich is written in two statistically distinct "dialects," A and B, first noticed by Prescott Currier. This study focused on B (the biological and recipe pages).</dd></div>
+      <div class="gi"><dt>EVA transliteration</dt><dd>A standard way of typing Voynichese symbols as Latin letters, so the manuscript can be analysed by computer. All our text came from one such transcription.</dd></div>
+      <div class="gi"><dt>Dispersion index</dt><dd>Whether a word is spread evenly through a book (≈1) or clumped in patches (&gt;1). Function words spread; topic words clump — a key test of whether language is present.</dd></div>
+      <div class="gi"><dt>z-score</dt><dd>How many standard deviations a measurement sits from "expected." Within ±3 is unremarkable; beyond is a genuine anomaly worth chasing.</dd></div>
+      <div class="gi"><dt>Unicity distance</dt><dd>The minimum amount of text a cipher needs before a unique solution even exists. The Voynich's ~38,000 words may sit at or below this limit — meaning some answers could be permanently unrecoverable.</dd></div>
+      <div class="gi"><dt>Naibbe cipher</dt><dd>A 2025 proposal showing that real Latin, enciphered by hand with tables and playing cards, mimics Voynichese statistics. We rebuilt it as a control — and then ruled it out for the real text.</dd></div>
+      <div class="gi"><dt>Function words</dt><dd>The grammatical glue of a language — the, of, and, to. They appear everywhere regardless of topic. The Voynich appears to lack this backbone entirely.</dd></div>
+      <div class="gi"><dt>Folio</dt><dd>A numbered leaf (page) of the manuscript. "f103" means folio 103. The Voynich has around 240 surviving pages of text and illustration.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="fn">
+      CAMPAIGN · 12 experiments · 4 hypotheses tested to destruction or survival · 8 control corpora<br>
+      SOURCES · Takahashi EVA transliteration, Beinecke MS 408 · M. Greshko, "The Naibbe Cipher," Cryptologia 2025 (method &amp; tables re-implemented) · comparison corpora: Caesar &amp; Pliny (Latin), Dante (Italian), Luther (German), Bible kralická (Czech), Károli (Hungarian), romanised WLC (Hebrew), KJV (English), LSG (French)<br>
+      METHODS · conditional-entropy &amp; Zipf forensics · context-vector homophone recovery · deck-ratio &amp; positional fingerprinting · cross-language calibrated key-search ladder · slot tomography · unsupervised re-segmentation (unigram-LM, hard-EM) · vowel-harmony &amp; morphological-productivity probes · Baum–Welch hidden-state model selection · grammatical-class tagging (Viterbi) · held-out generative reconstruction · adversarial six-channel steganographic audit · recurrence &amp; function-word-backbone tests, all against message-free surrogate nulls<br>
+      STANCE · Statistical, not cryptographic. Nothing here decodes the manuscript. The contribution is a narrowing — and a precise naming of the one doubt that remains.<br>
+      All figures computed from code run on the source transliteration. A research record, not a peer-reviewed claim.
+    </p>
+    <p class="fn"><span class="credit">Made by <a class="chicago-font" href="https://ben.gy" target="_blank" rel="noopener noreferrer">ben.gy</a></span></p>
+  </div>
+</footer>
+
+<!-- GLOSSARY BOTTOM SHEET -->
+<div class="sheet" id="sheet">
+  <div class="wrap2">
+    <span class="x" id="sheetClose">✕</span>
+    <div class="st" id="sheetTag">Term</div>
+    <div class="sd" id="sheetTerm"></div>
+    <div class="sb" id="sheetDef"></div>
+  </div>
+</div>
+
+<script>
+// ---------- drift glyph stream ----------
+(function(){
+  const words="qokeedy chedy qokain shedy daiin qokeey chol qokedy shey chedy dal qokaiin or okeey chedy qokey dar aiin oteedy ol chedy qokchedy shedy qotain chol daiin qokeedy oteey chey".split(" ");
+  const wrap=document.getElementById('driftwrap');
+  for(let r=0;r<7;r++){
+    const d=document.createElement('div'); d.className='drift';
+    d.style.top=(6+r*14)+'%';
+    d.style.animationDuration=(60+r*16)+'s';
+    let s=""; for(let k=0;k<40;k++) s+=words[(k*3+r)%words.length]+" ";
+    d.textContent=s+s; wrap.appendChild(d);
+  }
+})();
+
+// ---------- technical toggle ----------
+const tt=document.getElementById('techToggle');
+tt.addEventListener('click',()=>{
+  document.body.classList.toggle('show-tech');
+  tt.classList.toggle('on');
+});
+
+// ---------- scroll progress ----------
+const prog=document.getElementById('prog');
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  const p=h.scrollTop/(h.scrollHeight-h.clientHeight);
+  prog.style.width=(p*100)+'%';
+},{passive:true});
+
+// ---------- key node nav ----------
+document.querySelectorAll('.keysvg .nd').forEach(n=>{
+  n.addEventListener('click',()=>{
+    const el=document.getElementById(n.dataset.go);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+});
+
+// ---------- CSS bars fill on view ----------
+const fillObs=new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.querySelectorAll('.fl[data-w]').forEach(f=>{f.style.width=f.dataset.w+'%';}); fillObs.unobserve(e.target);} });
+},{threshold:.3});
+document.querySelectorAll('.bars').forEach(b=>fillObs.observe(b));
+
+// ---------- glossary sheet ----------
+const G={
+ entropy:["Conditional entropy","How surprising the next symbol is, given the current one. Real language is fairly unpredictable; Voynichese is far too predictable, meaning its words follow rigid moulds rather than the free flow of speech."],
+ zipf:["Zipf's law","The universal frequency curve of real language: the 2nd commonest word appears about half as often as the 1st, the 3rd a third as often, and so on. The Voynich obeys it — one half of why it looks linguistic."],
+ homophone:["Homophone","Different symbols that secretly stand for the same thing — a classic cipher trick to flatten letter frequencies. The Voynich contains families of words that swap interchangeably, exactly this signature."],
+ cramer:["Cramér's V","A 0-to-1 measure of how strongly two categories are linked. Near 0 means independent (random choice); higher means context-driven, the way real word choice is."],
+ hmm:["HMM / hidden-state machine","A model assuming invisible states drive what you see, plus an algorithm (Baum–Welch) that learns them from data. We used it to test whether hidden cipher 'memory' explains the text — it found structure, but the wrong shape for a machine."],
+ zscore:["z-score","How many standard deviations a measurement sits from what's expected by chance. Inside ±3 is unremarkable; beyond ±3 is a real anomaly worth investigating."],
+ unicity:["Unicity distance","The minimum amount of text a cipher needs before a single unique solution can exist at all. The Voynich's ~38,000 words may sit at or below this threshold — so some answers could be permanently unrecoverable, no matter how clever the attack."]
+};
+const sheet=document.getElementById('sheet');
+function openSheet(k){const g=G[k];if(!g)return;document.getElementById('sheetTerm').textContent=g[0];document.getElementById('sheetDef').textContent=g[1];sheet.classList.add('up');}
+document.querySelectorAll('.term').forEach(t=>t.addEventListener('click',()=>openSheet(t.dataset.term)));
+document.getElementById('sheetClose').addEventListener('click',()=>sheet.classList.remove('up'));
+addEventListener('click',e=>{if(sheet.classList.contains('up')&&!sheet.contains(e.target)&&!e.target.classList.contains('term'))sheet.classList.remove('up');});
+
+// ================= CHARTS =================
+Chart.defaults.font.family="ui-monospace, Menlo, monospace";
+Chart.defaults.font.size=11;
+Chart.defaults.color="#6c6552";
+const GRID="rgba(122,110,80,.22)", OCHRE="#bf8a2f", INDIGO="#5d7a9e", OX="#aa493a", VERD="#5d8a78", GREY="#9b9275";
+const baseScale=(xt,yt)=>({x:{title:{display:!!xt,text:xt},grid:{color:GRID}},y:{title:{display:!!yt,text:yt},grid:{color:GRID}}});
+
+// 1. word length
+new Chart(wlChart,{type:'line',data:{labels:["1","2","3","4","5","6","7","8","9","10","11","12","13","14"],
+ datasets:[
+  {label:"Voynich",data:[2.1,7.3,12.3,20.2,24.3,18.2,10.1,3.7,1.3,0.4,0.1,0.1,0,0],borderColor:OCHRE,backgroundColor:"rgba(191,138,47,.18)",fill:true,tension:.35,pointRadius:2},
+  {label:"Latin",data:[1.1,13.2,9.9,10.2,11.8,12.1,12.4,9.4,7.3,5.6,3.5,2,1,0.4],borderColor:INDIGO,backgroundColor:"rgba(93,122,158,.12)",fill:true,tension:.35,pointRadius:2}
+ ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:16,boxHeight:8}}},scales:baseScale("word length (glyphs)","% of words")}});
+
+// 2. zipf
+const v100=[863,537,501,469,426,396,363,350,344,318,308,305,283,279,272,270,262,260,253,243,219,212,211,191,186,177,174,172,155,155,154,152,151,151,150,147,144,144,144,143,141,140,140,138,130,129,119,118,117,115,114,111,107,106,105,104,104,102,100,100,98,98,97,96,94,91,89,89,88,87,86,84,84,82,81,79,79,75,75,74,74,73,72,69,68,68,66,65,65,65,64,63,63,63,60,60,60,59,59,58];
+const l100=[298,283,185,147,145,123,120,116,113,102,100,93,81,78,72,70,67,64,61,61,55,54,52,52,51,45,41,41,41,41,40,40,39,38,35,35,33,33,32,32,32,30,29,28,28,28,28,28,28,28,27,27,26,26,25,25,25,25,25,24,24,23,23,22,22,22,22,22,21,21,21,21,21,20,20,20,20,20,20,20,19,19,19,19,19,19,19,18,18,18,18,18,18,18,17,17,17,17,17,17];
+new Chart(zipfChart,{type:'scatter',data:{datasets:[
+ {label:"Voynich",data:v100.map((c,i)=>({x:i+1,y:c})),backgroundColor:OCHRE,pointRadius:2.4},
+ {label:"Latin",data:l100.map((c,i)=>({x:i+1,y:c})),backgroundColor:INDIGO,pointRadius:2.4}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:16,boxHeight:8}}},
+ scales:{x:{type:'logarithmic',title:{display:true,text:"word rank (log)"},grid:{color:GRID}},y:{type:'logarithmic',title:{display:true,text:"frequency (log)"},grid:{color:GRID}}}}});
+
+// 4. language ladder (toggle A/B)
+const ladB={french:80.9,hungarian:64.5,german:63.0,latin:62.2,italian:59.8,hebrew:48.6,english:39.2,czech:5.9};
+const ladA={french:60.3,italian:59.7,hungarian:55.3,latin:48.1,english:39.2,hebrew:33.5,german:26.3,czech:-4.6};
+function ladData(d){const ks=Object.keys(d).sort((a,b)=>d[b]-d[a]);return{labels:ks,vals:ks.map(k=>d[k]),colors:ks.map(k=>k==='czech'?OX:(k==='english'?GREY:OCHRE))};}
+let ladState='B';
+const ld=ladData(ladB);
+const ladderChartObj=new Chart(ladderChart,{type:'bar',data:{labels:ld.labels,datasets:[{data:ld.vals,backgroundColor:ld.colors,borderRadius:3}]},
+ options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'% lift'}}},
+ scales:{x:{title:{display:true,text:"key-search lift (% of the way from noise to real cipher)"},grid:{color:GRID},min:-10,max:90},y:{grid:{display:false}}}}});
+document.getElementById('ladderToggle').addEventListener('click',function(){
+ ladState=ladState==='B'?'A':'B';
+ const d=ladData(ladState==='B'?ladB:ladA);
+ ladderChartObj.data.labels=d.labels; ladderChartObj.data.datasets[0].data=d.vals; ladderChartObj.data.datasets[0].backgroundColor=d.colors; ladderChartObj.update();
+ this.textContent="Showing: "+ladState+"-region · tap to switch";
+});
+
+// 6. boundary leakage
+new Chart(boundaryChart,{type:'bar',data:{labels:["Latin","Naibbe cipher","Voynich A","Voynich B"],
+ datasets:[
+  {label:"cross-boundary leak ratio",data:[0.05,0.00,0.09,0.15],backgroundColor:[GREY,GREY,OCHRE,OCHRE],borderRadius:3},
+ ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},subtitle:{display:true,text:"how much information leaks across word-gaps (real language ≈ 0.05)"}},scales:baseScale("","leak ratio")}});
+
+// 7. HMM model selection
+new Chart(hmmChart,{type:'line',data:{labels:["1","2","3","4","6","8","12"],
+ datasets:[
+  {label:"Voynich",data:[0,0.02,0.04,0.04,0.07,0.07,0.077],borderColor:OCHRE,backgroundColor:"rgba(191,138,47,.12)",fill:true,tension:.3,pointRadius:3},
+  {label:"Latin (real grammar)",data:[0,-0.01,0,0.02,0.01,0.02,0.025],borderColor:INDIGO,tension:.3,pointRadius:3},
+  {label:"Naibbe cipher (no memory)",data:[0,0,0,0,0,0,0],borderColor:OX,borderDash:[5,4],tension:.3,pointRadius:3}
+ ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:16,boxHeight:8}}},scales:baseScale("hidden states allowed","structure found (bits/word gained)")}});
+
+// 8. predictor shoot-out
+new Chart(predChart,{type:'bar',data:{labels:["Voynich","Latin","Naibbe cipher"],
+ datasets:[
+  {label:"predicted by POSITION in line",data:[1.8,0.4,0.3],backgroundColor:INDIGO,borderRadius:3},
+  {label:"predicted by PREVIOUS word",data:[50.3,64.9,47.8],backgroundColor:OCHRE,borderRadius:3}
+ ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:16,boxHeight:8}}},scales:{x:{grid:{display:false}},y:{title:{display:true,text:"% of next-word uncertainty removed"},grid:{color:GRID}}}}});
+
+// 10. message hunt
+const hunt=[["First-letter acrostic",-0.3],["Last-letter acrostic",-5.1],["Hidden message-column",0.2],["Repeated verbatim phrases",-5.2],["Words clustering by topic",15.7]];
+new Chart(huntChart,{type:'bar',data:{labels:hunt.map(h=>h[0]),datasets:[{data:hunt.map(h=>h[1]),
+ backgroundColor:hunt.map(h=>Math.abs(h[1])>3?(h[1]>0?OCHRE:OX):GREY),borderRadius:3}]},
+ options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+  tooltip:{callbacks:{label:c=>'z = '+c.parsed.x}}},
+  scales:{x:{title:{display:true,text:"z-score  (shaded ±3 = no signal)"},grid:{color:GRID},min:-8,max:18,
+   afterDraw:()=>{}},y:{grid:{display:false}}}}});
+
+// 11. door 2
+new Chart(door2Chart,{type:'line',data:{labels:["1","2","3","4","5","6","7","8","9","10","11","12"],
+ datasets:[{label:"page-to-page vocabulary similarity",data:[0.511,0.471,0.482,0.459,0.473,0.533,0.477,0.426,0.438,0.379,0.409,0.397],
+  borderColor:OCHRE,backgroundColor:"rgba(191,138,47,.12)",fill:true,tension:.3,pointRadius:2.5}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},subtitle:{display:true,text:"declines with distance (drift) — but 4 distant pairs echo beyond it (topics)"}},scales:baseScale("pages apart","similarity")}});
+
+// 12. door 4
+new Chart(door4Chart,{type:'bar',data:{labels:["very frequent\n(function-word zone)","frequent","mid","rarer\n(content zone)"],
+ datasets:[{label:"Voynich (inverted!)",data:[5.89,2.85,1.89,1.43],backgroundColor:[OX,"#b9603a","#c89a6a",VERD],borderRadius:3}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},subtitle:{display:true,text:"real language RISES left→right; the Voynich falls — no function-word floor"}},
+  scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{title:{display:true,text:"clumpiness (dispersion)"},grid:{color:GRID}}}}});
+</script>
+</body>
+</html>
