@@ -17,7 +17,9 @@ The page walks each fork step by step in both plain-English and (via a header to
 
 ### Tech notes
 - Pure static HTML/CSS/JS. Chart.js and Google Fonts load from CDN.
-- No cookies, no storage, no tracking, no server. Works offline once the CDN assets are cached.
+- No cookies, no storage, no server. Works offline once the CDN assets are cached.
+- Anonymous, cookie-less page-view counts via Cloudflare Web Analytics — no personal data, no
+  cross-site tracking. Shared catalog-wide token; feeds the hub's Trending / Popular rankings.
 - `_headers` sets long cache lifetimes for Cloudflare Pages and sane security headers.
 
 ## Deploy
